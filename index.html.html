@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Detektif Bangun Datar</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel untuk Kompilasi JSX di Browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spin-slow 12s linear infinite;
+        }
+        /* Mengamankan scrollbar agar tetap ramah anak */
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-none {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-[#F0F9FF] min-h-screen text-slate-800 font-sans">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Ikon SVG Kustom agar File HTML Benar-Benar Mandiri ---
+        const SparklesIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/>
+                <path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5Z"/>
+                <path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/>
+            </svg>
+        );
+
+        const HelpCircleIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        );
+
+        const CheckCircleIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+        );
+
+        const XCircleIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+        );
+
+        const RefreshCwIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/>
+            </svg>
+        );
+
+        const ArrowRightIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+        );
+
+        const ArrowLeftIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+        );
+
+        const StarIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+        );
+
+        const ChevronRightIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+        );
+
+        const SmileIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+            </svg>
+        );
+
+        const SaveIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+            </svg>
+        );
+
+        const TrophyIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/><path d="M12 2a6 6 0 0 1 6 6v5a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8a6 6 0 0 1 6-6z"/>
+            </svg>
+        );
+
+        const SchoolIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <path d="m22 10-6-4-10 6.666V18h16V10z"/><path d="M6 18H2v-5.5a2.5 2.5 0 0 1 2.5-2.5h1.5"/><circle cx="12" cy="10" r="2"/><path d="M12 12v4"/>
+            </svg>
+        );
+
+        const UserIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+        );
+
+        const CalendarIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class={className}>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+        );
+
+        // --- Data Tetap Game ---
+        const SHAPES_DATA = [
+          {
+            id: 'persegi',
+            nama: 'Persegi',
+            deskripsi: 'Kotak ajaib yang memiliki 4 sisi sama panjang, 4 sudut, dan 4 titik sudut.',
+            warna: '#3B82F6',
+            bgClass: 'bg-blue-50 border-blue-200',
+            textClass: 'text-blue-600',
+            badgeColor: 'bg-blue-100 text-blue-800',
+            svgPath: "M 50,50 L 250,50 L 250,250 L 50,250 Z",
+            points: [
+              { x: 50, y: 50, id: 'A' },
+              { x: 250, y: 50, id: 'B' },
+              { x: 250, y: 250, id: 'C' },
+              { x: 50, y: 250, id: 'D' }
+            ],
+            sides: [
+              { from: { x: 50, y: 50 }, to: { x: 250, y: 50 }, id: 's1', label: 'Sisi Atas' },
+              { from: { x: 250, y: 50 }, to: { x: 250, y: 250 }, id: 's2', label: 'Sisi Kanan' },
+              { from: { x: 250, y: 250 }, to: { x: 50, y: 250 }, id: 's3', label: 'Sisi Bawah' },
+              { from: { x: 50, y: 250 }, to: { x: 50, y: 50 }, id: 's4', label: 'Sisi Kiri' }
+            ],
+            angles: [
+              { x: 50, y: 50, startAngle: 0, endAngle: 90, id: 'sd1', type: 'siku-siku' },
+              { x: 250, y: 50, startAngle: 90, endAngle: 180, id: 'sd2', type: 'siku-siku' },
+              { x: 250, y: 250, startAngle: 180, endAngle: 270, id: 'sd3', type: 'siku-siku' },
+              { x: 50, y: 250, startAngle: 270, endAngle: 360, id: 'sd4', type: 'siku-siku' }
+            ],
+            bendaNyata: [
+              { nama: 'Papan Catur', icon: '🏁', deskripsi: 'Papan catur berbentuk kotak persegi yang memiliki semua sisi sama panjang!' },
+              { nama: 'Jendela Kamar', icon: '🪟', deskripsi: 'Lihatlah jendela rumahmu, banyak yang berbentuk persegi indah.' },
+              { nama: 'Biskuit Kotak', icon: '🍪', deskripsi: 'Nyam! Biskuit lezat ini memiliki 4 sisi yang sama panjang.' }
+            ]
+          },
+          {
+            id: 'segitiga',
+            nama: 'Segitiga Sama Sisi',
+            deskripsi: 'Bangun datar beratap runcing dengan 3 sisi, 3 sudut, dan 3 titik sudut.',
+            warna: '#10B981',
+            bgClass: 'bg-emerald-50 border-emerald-200',
+            textClass: 'text-emerald-600',
+            badgeColor: 'bg-emerald-100 text-emerald-800',
+            svgPath: "M 150,50 L 270,250 L 30,250 Z",
+            points: [
+              { x: 150, y: 50, id: 'A' },
+              { x: 270, y: 250, id: 'B' },
+              { x: 30, y: 250, id: 'C' }
+            ],
+            sides: [
+              { from: { x: 150, y: 50 }, to: { x: 270, y: 250 }, id: 's1', label: 'Sisi Kanan' },
+              { from: { x: 270, y: 250 }, to: { x: 30, y: 250 }, id: 's2', label: 'Sisi Bawah' },
+              { from: { x: 30, y: 250 }, to: { x: 150, y: 50 }, id: 's3', label: 'Sisi Kiri' }
+            ],
+            angles: [
+              { x: 150, y: 50, startAngle: 60, endAngle: 120, id: 'sd1', type: 'lancip' },
+              { x: 270, y: 250, startAngle: 180, endAngle: 240, id: 'sd2', type: 'lancip' },
+              { x: 30, y: 250, startAngle: 300, endAngle: 360, id: 'sd3', type: 'lancip' }
+            ],
+            bendaNyata: [
+              { nama: 'Rambu Segitiga', icon: '⚠️', deskripsi: 'Rambu lalu lintas di jalan raya untuk memberi peringatan hati-hati.' },
+              { nama: 'Potongan Pizza', icon: '🍕', deskripsi: 'Satu juring potongan pizza lezat ini menyerupai bentuk segitiga lancip.' },
+              { nama: 'Atap Atap Rumah', icon: '🏠', deskripsi: 'Atap atap pondok atau rumah tradisional banyak berbentuk segitiga indah.' }
+            ]
+          },
+          {
+            id: 'persegi-panjang',
+            nama: 'Persegi Panjang',
+            deskripsi: 'Memiliki 4 sisi (sisi berhadapan sama panjang), 4 sudut siku-siku, dan 4 titik sudut.',
+            warna: '#F59E0B',
+            bgClass: 'bg-amber-50 border-amber-200',
+            textClass: 'text-amber-600',
+            badgeColor: 'bg-amber-100 text-amber-800',
+            svgPath: "M 30,80 L 270,80 L 270,220 L 30,220 Z",
+            points: [
+              { x: 30, y: 80, id: 'A' },
+              { x: 270, y: 80, id: 'B' },
+              { x: 270, y: 220, id: 'C' },
+              { x: 30, y: 220, id: 'D' }
+            ],
+            sides: [
+              { from: { x: 30, y: 80 }, to: { x: 270, y: 80 }, id: 's1', label: 'Sisi Atas' },
+              { from: { x: 270, y: 80 }, to: { x: 270, y: 220 }, id: 's2', label: 'Sisi Kanan' },
+              { from: { x: 270, y: 220 }, to: { x: 30, y: 220 }, id: 's3', label: 'Sisi Bawah' },
+              { from: { x: 30, y: 220 }, to: { x: 30, y: 80 }, id: 's4', label: 'Sisi Kiri' }
+            ],
+            angles: [
+              { x: 30, y: 80, startAngle: 0, endAngle: 90, id: 'sd1', type: 'siku-siku' },
+              { x: 270, y: 80, startAngle: 90, endAngle: 180, id: 'sd2', type: 'siku-siku' },
+              { x: 270, y: 220, startAngle: 180, endAngle: 270, id: 'sd3', type: 'siku-siku' },
+              { x: 30, y: 220, startAngle: 270, endAngle: 360, id: 'sd4', type: 'siku-siku' }
+            ],
+            bendaNyata: [
+              { nama: 'Papan Tulis MI', icon: '📋', deskripsi: 'Papan tulis kelas kita bermuka luas, memiliki panjang dan lebar berbeda.' },
+              { nama: 'Buku Paket', icon: '📕', deskripsi: 'Buku pelajaran atau Al-Qur\'an Hadits kelas 2 memiliki bentuk persegi panjang.' },
+              { nama: 'Sajadah', icon: '🕌', deskripsi: 'Sajadah untuk sholat kita berbentuk persegi panjang agar muat saat sujud.' }
+            ]
+          },
+          {
+            id: 'lingkaran',
+            nama: 'Lingkaran',
+            deskripsi: 'Bangun datar bulat sempurna! Hanya memiliki 1 sisi melingkar, tidak memiliki sudut atau titik sudut.',
+            warna: '#EC4899',
+            bgClass: 'bg-pink-50 border-pink-200',
+            textClass: 'text-pink-600',
+            badgeColor: 'bg-pink-100 text-pink-800',
+            svgPath: "M 150,150 m -100,0 a 100,100 0 1,0 200,0 a 100,100 0 1,0 -200,0",
+            points: [],
+            sides: [
+              { isCurve: true, cx: 150, cy: 150, r: 100, id: 's1', label: 'Sisi Lengkung' }
+            ],
+            angles: [],
+            bendaNyata: [
+              { nama: 'Jam Dinding', icon: '⏰', deskripsi: 'Jam dinding bulat yang berputar setia mengingatkan kita waktu sholat dan belajar.' },
+              { nama: 'Koin Logam', icon: '🪙', deskripsi: 'Uang koin logam Rp500 atau Rp1000 memiliki bentuk lingkaran mulus.' },
+              { nama: 'Rebana MI', icon: '🥁', deskripsi: 'Alat musik rebana untuk sholawatan memiliki permukaan berbentuk lingkaran.' }
+            ]
+          }
+        ];
+
+        const QUIZ_QUESTIONS = [
+          {
+            tipe: 'ketuk-titik-sudut',
+            bangunId: 'segitiga',
+            pertanyaan: 'Hai Detektif! Mari cari tahu di mana saja letak TITIK SUDUT pada Segitiga ini. Ketuk semua lingkaran merah menyala!',
+            targetCount: 3,
+            instruksiKhusus: 'Klik ketiga sudut tajamnya sampai semua tercentang!'
+          },
+          {
+            tipe: 'ketuk-sisi',
+            bangunId: 'persegi',
+            pertanyaan: 'Sekarang, ketuk seluruh GARIS SISI (garis tebal) pada bangun Persegi ini untuk mengukurnya!',
+            targetCount: 4,
+            instruksiKhusus: 'Garis sisi adalah pembatas bangun luar. Ketuk keempat garisnya!'
+          },
+          {
+            tipe: 'misteri-detektif',
+            pertanyaan: 'Misteri Sajadah: "Aku digunakan untuk alas sholat. Aku punya 4 titik sudut, dan sisi yang berhadapan sama panjang. Siapakah aku?"',
+            pilihan: [
+              { id: 'persegi', text: 'Persegi', benar: false },
+              { id: 'persegi-panjang', text: 'Persegi Panjang', benar: true },
+              { id: 'lingkaran', text: 'Lingkaran', benar: false }
+            ],
+            umpanBalikBenar: 'Masya Allah, Hebat! Sajadah memiliki sisi atas-bawah yang sama panjang, serta sisi kiri-kanan yang sama panjang. Itu ciri Persegi Panjang!',
+            umpanBalikSalah: 'Ayo ingat lagi, Sajadah bentuknya memanjang ke depan, jadi sisi atas-bawah dan sampingnya berbeda panjangnya. Coba lagi!'
+          },
+          {
+            tipe: 'ketuk-titik-sudut',
+            bangunId: 'lingkaran',
+            pertanyaan: 'Detektif cilik, tolong temukan TITIK SUDUT pada bangun Lingkaran bulat ini. Berapa banyak yang bisa kamu temukan?',
+            targetCount: 0,
+            instruksiKhusus: 'Apakah ada bagian tajam di lingkaran? Jika tidak ada, langsung tekan tombol "Tidak Ada Titik Sudut"!'
+          },
+          {
+            tipe: 'misteri-detektif',
+            pertanyaan: 'Misteri Rebana: "Aku melingkar indah, tidak memiliki sudut tajam sama sekali, dan hanya memiliki 1 sisi lengkung. Siapakah aku?"',
+            pilihan: [
+              { id: 'segitiga', text: 'Segitiga', benar: false },
+              { id: 'lingkaran', text: 'Lingkaran', benar: true },
+              { id: 'persegi', text: 'Persegi', benar: false }
+            ],
+            umpanBalikBenar: 'Alhamdulillah benar! Lingkaran hanya dibatasi oleh satu garis melengkung yang menyatu kembali sehingga tidak ada pojokan tajam.',
+            umpanBalikSalah: 'Kurang tepat, Sahabat Detektif. Bangun yang bulat mulus tanpa pojokan tajam adalah Lingkaran.'
+          }
+        ];
+
+        // Efek Suara Ramah Anak menggunakan Web Audio API
+        const playBeep = (freq, duration, type = 'sine') => {
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = type;
+            oscillator.frequency.value = freq;
+            
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+          } catch (e) {}
+        };
+
+        const playSuccessSound = () => {
+          playBeep(523.25, 0.15, 'triangle'); // C5
+          setTimeout(() => playBeep(659.25, 0.15, 'triangle'), 100); // E5
+          setTimeout(() => playBeep(783.99, 0.3, 'triangle'), 200); // G5
+        };
+
+        const playFailSound = () => {
+          playBeep(329.63, 0.2, 'sawtooth'); // E4
+          setTimeout(() => playBeep(261.63, 0.3, 'sawtooth'), 150); // C4
+        };
+
+        const playClickSound = () => {
+          playBeep(440, 0.05, 'sine'); // A4
+        };
+
+        // --- Komponen Utama Aplikasi ---
+        function App() {
+          const [layar, setLayar] = useState('beranda');
+          const [detektifNama, setDetektifNama] = useState('');
+          const [namaSekolah, setNamaSekolah] = useState('');
+          const [bangunTerpilih, setBangunTerpilih] = useState(SHAPES_DATA[0]);
+          const [tabInfo, setTabInfo] = useState('bagian');
+          const [bagianDisorot, setBagianDisorot] = useState(null);
+
+          // State Kuis
+          const [indeksKuis, setIndeksKuis] = useState(0);
+          const [itemTerpilihKuis, setItemTerpilihKuis] = useState([]);
+          const [jawabanTerpilih, setJawabanTerpilih] = useState(null);
+          const [kuisDiverifikasi, setKuisDiverifikasi] = useState(false);
+          const [kuisBenar, setKuisBenar] = useState(false);
+          const [bintangKuis, setBintangKuis] = useState(0);
+          const [bantuanTerbuka, setBantuanTerbuka] = useState(false);
+
+          // Papan Skor & Penyimpanan
+          const [daftarSkor, setDaftarSkor] = useState([
+            { nama: 'Zahra', sekolah: 'MIN 1 Kota Malang', bintang: 5, tanggal: '29 Juni 2026' },
+            { nama: 'Fatih', sekolah: 'MI Al-Hikmah', bintang: 4, tanggal: '28 Juni 2026' },
+            { nama: 'Aisyah', sekolah: 'MIN 2 Jakarta', bintang: 5, tanggal: '27 Juni 2026' }
+          ]);
+          const [skorTersimpan, setSkorTersimpan] = useState(false);
+          const [notifikasiBerhasil, setNotifikasiBerhasil] = useState(false);
+
+          const navigasiKe = (layarBaru) => {
+            playClickSound();
+            setLayar(layarBaru);
+          };
+
+          const resetKuis = () => {
+            setIndeksKuis(0);
+            setItemTerpilihKuis([]);
+            setJawabanTerpilih(null);
+            setKuisDiverifikasi(false);
+            setKuisBenar(false);
+            setBintangKuis(0);
+            setSkorTersimpan(false);
+          };
+
+          const tanganiKetukKuis = (id) => {
+            playClickSound();
+            if (kuisDiverifikasi) return;
+
+            if (itemTerpilihKuis.includes(id)) {
+              setItemTerpilihKuis(itemTerpilihKuis.filter(item => item !== id));
+            } else {
+              setItemTerpilihKuis([...itemTerpilihKuis, id]);
+            }
+          };
+
+          const verifikasiJawabanKuis = () => {
+            const soal = QUIZ_QUESTIONS[indeksKuis];
+            let hasilBenar = false;
+
+            if (soal.tipe === 'ketuk-titik-sudut' || soal.tipe === 'ketuk-sisi') {
+              if (itemTerpilihKuis.length === soal.targetCount) {
+                hasilBenar = true;
+              }
+            } else if (soal.tipe === 'misteri-detektif') {
+              const opsiDipilih = soal.pilihan.find(p => p.id === jawabanTerpilih);
+              if (opsiDipilih && opsiDipilih.benar) {
+                hasilBenar = true;
+              }
+            }
+
+            setKuisBenar(hasilBenar);
+            setKuisDiverifikasi(true);
+
+            if (hasilBenar) {
+              playSuccessSound();
+              setBintangKuis(prev => prev + 1);
+            } else {
+              playFailSound();
+            }
+          };
+
+          const lanjutKuis = () => {
+            playClickSound();
+            if (indeksKuis + 1 < QUIZ_QUESTIONS.length) {
+              setIndeksKuis(indeksKuis + 1);
+              setItemTerpilihKuis([]);
+              setJawabanTerpilih(null);
+              setKuisDiverifikasi(false);
+              setKuisBenar(false);
+            } else {
+              navigasiKe('sertifikat');
+            }
+          };
+
+          const simpanSkorDetektif = () => {
+            if (skorTersimpan) return;
+            
+            playSuccessSound();
+            const namaBaru = detektifNama.trim() || 'Detektif Hebat';
+            const sekolahBaru = namaSekolah.trim() || 'Madrasah Hebat';
+            const tanggalHariIni = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+            const entriBaru = {
+              nama: namaBaru,
+              sekolah: sekolahBaru,
+              bintang: bintangKuis,
+              tanggal: tanggalHariIni
+            };
+
+            setDaftarSkor([entriBaru, ...daftarSkor]);
+            setSkorTersimpan(true);
+            setNotifikasiBerhasil(true);
+          };
+
+          const renderVisualBangun = (bangun, interaktif = false, modeKuis = false, tipeKuis = '') => {
+            const highlightsSisi = bagianDisorot === 'sisi';
+            const highlightsSudut = bagianDisorot === 'sudut';
+            const highlightsTitik = bagianDisorot === 'titik-sudut';
+
+            return (
+              <div className="relative w-72 h-72 mx-auto bg-white rounded-3xl border-4 border-yellow-200 shadow-inner flex items-center justify-center p-4">
+                <svg className="w-full h-full overflow-visible" viewBox="0 0 300 300">
+                  {/* Sisi Lingkaran khusus */}
+                  {bangun.id === 'lingkaran' && (
+                    <circle
+                      cx="150"
+                      cy="150"
+                      r="100"
+                      fill="#FDF2F8"
+                      stroke={
+                        modeKuis && tipeKuis === 'ketuk-sisi'
+                          ? (itemTerpilihKuis.includes('s1') ? '#EC4899' : '#E2E8F0')
+                          : (highlightsSisi ? '#EC4899' : bangun.warna)
+                      }
+                      strokeWidth={
+                        modeKuis && tipeKuis === 'ketuk-sisi'
+                          ? (itemTerpilihKuis.includes('s1') ? 12 : 8)
+                          : (highlightsSisi ? 12 : 8)
+                      }
+                      className={`transition-all duration-300 cursor-pointer ${
+                        modeKuis && tipeKuis === 'ketuk-sisi' ? 'animate-pulse hover:stroke-pink-300' : ''
+                      }`}
+                      onClick={() => {
+                        if (modeKuis && tipeKuis === 'ketuk-sisi') {
+                          tanganiKetukKuis('s1');
+                        } else if (!modeKuis) {
+                          setBagianDisorot('sisi');
+                        }
+                      }}
+                    />
+                  )}
+
+                  {/* Sisi Bangun Datar Polygon */}
+                  {bangun.id !== 'lingkaran' && (
+                    <>
+                      <path
+                        d={bangun.svgPath}
+                        fill={bangun.id === 'persegi' ? '#EFF6FF' : bangun.id === 'segitiga' ? '#ECFDF5' : '#FFFBEB'}
+                        stroke="#E2E8F0"
+                        strokeWidth="2"
+                      />
+
+                      {bangun.sides.map((side) => {
+                        const isSelectedKuis = itemTerpilihKuis.includes(side.id);
+                        const isDisorot = highlightsSisi || isSelectedKuis;
+
+                        return (
+                          <line
+                            key={side.id}
+                            x1={side.from.x}
+                            y1={side.from.y}
+                            x2={side.to.x}
+                            y2={side.to.y}
+                            stroke={
+                              modeKuis && tipeKuis === 'ketuk-sisi'
+                                ? (isSelectedKuis ? '#F59E0B' : '#94A3B8')
+                                : (isDisorot ? bangun.warna : '#475569')
+                            }
+                            strokeWidth={isDisorot ? 10 : 6}
+                            strokeLinecap="round"
+                            className={`transition-all duration-200 cursor-pointer ${
+                              modeKuis && tipeKuis === 'ketuk-sisi' && !isSelectedKuis ? 'animate-pulse hover:stroke-yellow-400' : ''
+                            }`}
+                            onClick={() => {
+                              if (modeKuis && tipeKuis === 'ketuk-sisi') {
+                                tanganiKetukKuis(side.id);
+                              } else if (!modeKuis) {
+                                setBagianDisorot('sisi');
+                              }
+                            }}
+                          />
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {/* Visualisasi Sudut */}
+                  {bangun.angles && (highlightsSudut || (modeKuis && tipeKuis === 'ketuk-sudut')) && 
+                    bangun.angles.map((ang) => {
+                      const size = ang.type === 'siku-siku' ? 25 : 30;
+                      return (
+                        <g key={ang.id} className="animate-bounce">
+                          {ang.type === 'siku-siku' ? (
+                            <path
+                              d={
+                                ang.x === 50 && ang.y === 50 ? `M 50,${50+size} L ${50+size},${50+size} L ${50+size},50` :
+                                ang.x === 250 && ang.y === 50 ? `M ${250-size},50 L ${250-size},${50+size} L 250,${50+size}` :
+                                ang.x === 250 && ang.y === 250 ? `M 250,${250-size} L ${250-size},${250-size} L ${250-size},250` :
+                                ang.x === 30 && ang.y === 80 ? `M 30,${80+size} L ${30+size},${80+size} L ${30+size},80` :
+                                ang.x === 270 && ang.y === 80 ? `M ${270-size},80 L ${270-size},${80+size} L 270,${80+size}` :
+                                ang.x === 270 && ang.y === 220 ? `M 270,${220-size} L ${270-size},${220-size} L ${270-size},220` :
+                                ang.x === 30 && ang.y === 220 ? `M 30,${220-size} L ${30+size},${220-size} L ${30+size},220` :
+                                `M 50,${250-size} L ${50+size},${250-size} L ${50+size},250`
+                              }
+                              fill="none"
+                              stroke="#EF4444"
+                              strokeWidth="4"
+                            />
+                          ) : (
+                            <path
+                              d={
+                                ang.x === 150 ? `M 130,83 A 25,25 0 0,0 170,83` :
+                                ang.x === 270 ? `M 235,230 A 25,25 0 0,0 248,212` :
+                                `M 52,212 A 25,25 0 0,0 65,230`
+                              }
+                              fill="none"
+                              stroke="#EF4444"
+                              strokeWidth="4"
+                            />
+                          )}
+                          <text
+                            x={ang.x === 150 ? ang.x : ang.x > 150 ? ang.x - 35 : ang.x + 35}
+                            y={ang.y > 150 ? ang.y - 20 : ang.y + 35}
+                            fill="#EF4444"
+                            fontSize="14"
+                            fontWeight="bold"
+                            textAnchor="middle"
+                          >
+                            Sudut
+                          </text>
+                        </g>
+                      );
+                    })
+                  }
+
+                  {/* Titik Sudut */}
+                  {bangun.points && (highlightsTitik || (modeKuis && tipeKuis === 'ketuk-titik-sudut')) &&
+                    bangun.points.map((pt) => {
+                      const isSelectedKuis = itemTerpilihKuis.includes(pt.id);
+                      const radius = highlightsTitik ? 10 : (isSelectedKuis ? 12 : 8);
+                      const fillCol = modeKuis && tipeKuis === 'ketuk-titik-sudut'
+                        ? (isSelectedKuis ? '#10B981' : '#EF4444')
+                        : '#EF4444';
+
+                      return (
+                        <g key={pt.id} className="cursor-pointer" onClick={() => {
+                          if (modeKuis && tipeKuis === 'ketuk-titik-sudut') {
+                            tanganiKetukKuis(pt.id);
+                          } else if (!modeKuis) {
+                            setBagianDisorot('titik-sudut');
+                          }
+                        }}>
+                          <circle
+                            cx={pt.x}
+                            cy={pt.y}
+                            r={radius + 6}
+                            fill={fillCol}
+                            opacity="0.3"
+                            className="animate-ping"
+                          />
+                          <circle
+                            cx={pt.x}
+                            cy={pt.y}
+                            r={radius}
+                            fill={fillCol}
+                            stroke="#FFFFFF"
+                            strokeWidth="3"
+                          />
+                          {isSelectedKuis && (
+                            <text
+                              x={pt.x}
+                              y={pt.y + 4}
+                              fill="#FFFFFF"
+                              fontSize="12"
+                              fontWeight="bold"
+                              textAnchor="middle"
+                            >
+                              ✓
+                            </text>
+                          )}
+                        </g>
+                      );
+                    })
+                  }
+                </svg>
+                
+                {!modeKuis && (
+                  <div className="absolute bottom-3 left-3 right-3 bg-white/95 px-3 py-1.5 rounded-2xl shadow-sm border border-yellow-100 text-center">
+                    <p className="text-xs font-semibold text-slate-500">
+                      {highlightsSisi && '👆 Garis tebal luar adalah Sisi'}
+                      {highlightsSudut && '📐 Pojok dalam adalah Sudut'}
+                      {highlightsTitik && '🔴 Titik ujung runcing adalah Titik Sudut'}
+                      {!highlightsSisi && !highlightsSudut && !highlightsTitik && 'Sentuh tombol di bawah untuk melihat bagian!'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          };
+
+          return (
+            <div className="min-h-screen flex flex-col justify-between">
+              {/* 1. LAYAR BERANDA */}
+              {layar === 'beranda' && (
+                <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-lg mx-auto w-full text-center">
+                  <div className="relative mb-4">
+                    <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center shadow-md border-4 border-yellow-300">
+                      <span className="text-5xl">🕵️‍♂️</span>
+                    </div>
+                    <div className="absolute -top-1 -right-1 bg-emerald-400 text-white p-1.5 rounded-full shadow-lg">
+                      <SparklesIcon className="w-4 h-4 animate-spin-slow" />
+                    </div>
+                  </div>
+
+                  <span className="px-4 py-1.5 bg-yellow-200 text-yellow-800 rounded-full text-xs font-bold shadow-sm tracking-wide uppercase mb-3">
+                    Kelas 2 MI • Kurikulum Merdeka
+                  </span>
+
+                  <h1 className="text-2xl md:text-3xl font-black text-slate-800 leading-tight mb-2">
+                    Petualangan Detektif <br />
+                    <span className="text-blue-500">Bangun Datar</span> 🔍
+                  </h1>
+
+                  <div className="bg-white p-5 rounded-3xl shadow-xl border-2 border-yellow-100 w-full mb-5 text-left space-y-4">
+                    <div>
+                      <label className="block text-xs font-extrabold text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                        <UserIcon className="w-4 h-4 text-blue-500" /> 📝 Nama Detektif Cilik:
+                      </label>
+                      <input
+                        type="text"
+                        value={detektifNama}
+                        onChange={(e) => setDetektifNama(e.target.value)}
+                        placeholder="Tulis namamu disini..."
+                        maxLength={20}
+                        className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:outline-none focus:border-blue-400 font-bold text-slate-700 transition"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-extrabold text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                        <SchoolIcon className="w-4 h-4 text-emerald-500" /> 🕌 Nama Madrasah / Sekolah:
+                      </label>
+                      <input
+                        type="text"
+                        value={namaSekolah}
+                        onChange={(e) => setNamaSekolah(e.target.value)}
+                        placeholder="Contoh: MIN 1 Kota Malang / MI Al-Hikmah"
+                        maxLength={30}
+                        className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:outline-none focus:border-emerald-400 font-bold text-slate-700 transition"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 w-full">
+                    <button
+                      onClick={() => {
+                        if (!detektifNama.trim()) setDetektifNama('Detektif Hebat');
+                        if (!namaSekolah.trim()) setNamaSekolah('Madrasah Cerdas');
+                        playSuccessSound();
+                        navigasiKe('peta');
+                      }}
+                      className="w-full bg-emerald-400 hover:bg-emerald-500 text-white font-extrabold text-lg py-3.5 px-6 rounded-2xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 active:scale-95"
+                    >
+                      Mulai Petualangan 🚀
+                    </button>
+
+                    <button
+                      onClick={() => navigasiKe('papan-prestasi')}
+                      className="w-full bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 font-bold text-sm py-3 px-6 rounded-2xl flex items-center justify-center gap-2 transition"
+                    >
+                      <TrophyIcon className="w-4 h-4 text-yellow-500" /> Lihat Papan Prestasi
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. LAYAR PETA MISI */}
+              {layar === 'peta' && (
+                <div className="flex-1 max-w-2xl mx-auto w-full p-4 md:p-6 flex flex-col">
+                  <div className="flex items-center justify-between mb-5 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🕵️‍♂️</span>
+                      <div className="text-left">
+                        <p className="font-extrabold text-slate-700 leading-tight">{detektifNama || 'Detektif Hebat'}</p>
+                        <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                          <SchoolIcon className="w-3 h-3 text-emerald-500" /> {namaSekolah || 'Madrasah Cerdas'}
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => navigasiKe('beranda')}
+                      className="text-slate-400 hover:text-slate-600 text-xs font-bold flex items-center gap-1"
+                    >
+                      <ArrowLeftIcon className="w-3.5 h-3.5" /> Ganti Profil
+                    </button>
+                  </div>
+
+                  <div className="bg-yellow-50 border-2 border-yellow-100 p-4 rounded-3xl mb-6 flex items-start gap-4 text-left">
+                    <span className="text-4xl">🦖</span>
+                    <div>
+                      <h4 className="font-bold text-yellow-800 text-sm">Detektif Dino Menyapa:</h4>
+                      <p className="text-xs text-yellow-900/90 mt-0.5 leading-relaxed">
+                        "Ahlan wa sahlan utusan hebat dari <strong>{namaSekolah || 'Madrasah Cerdas'}</strong>! Misi kita adalah mempelajari geometri lalu membuktikan kehebatanmu di kuis untuk membawa pulang piala!"
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4 flex-1">
+                    <div 
+                      onClick={() => navigasiKe('eksplorasi')}
+                      className="bg-white rounded-3xl border-4 border-blue-100 hover:border-blue-300 p-5 text-left cursor-pointer transition-all hover:shadow-md transform hover:-translate-y-0.5 flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-3 text-2xl">
+                          📖
+                        </div>
+                        <h3 className="text-lg font-extrabold text-blue-900 mb-1">1. Markas Belajar</h3>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Kenali rahasia Sisi, Sudut, dan Titik Sudut dari benda nyata di sekitar Madrasah!
+                        </p>
+                      </div>
+                      <div className="mt-4 flex items-center justify-between text-blue-600 font-bold text-xs">
+                        <span>Mulai Belajar</span>
+                        <ChevronRightIcon className="w-4 h-4 bg-blue-50 rounded-full" />
+                      </div>
+                    </div>
+
+                    <div 
+                      onClick={() => {
+                        resetKuis();
+                        navigasiKe('kuis');
+                      }}
+                      className="bg-white rounded-3xl border-4 border-emerald-100 hover:border-emerald-300 p-5 text-left cursor-pointer transition-all hover:shadow-md transform hover:-translate-y-0.5 flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-3 text-2xl">
+                          🔍
+                        </div>
+                        <h3 className="text-lg font-extrabold text-emerald-900 mb-1">2. Kuis Pintar</h3>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Selesaikan 5 tantangan interaktif, kumpulkan bintang, dan catat skor sekolahmu!
+                        </p>
+                      </div>
+                      <div className="mt-4 flex items-center justify-between text-emerald-600 font-bold text-xs">
+                        <span>Mulai Kuis</span>
+                        <ChevronRightIcon className="w-4 h-4 bg-emerald-50 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => navigasiKe('papan-prestasi')}
+                    className="mt-4 w-full bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-extrabold py-3 rounded-2xl text-xs flex items-center justify-center gap-2 transition"
+                  >
+                    <TrophyIcon className="w-4 h-4 text-yellow-600" /> Lihat Papan Prestasi Antar-Madrasah
+                  </button>
+                </div>
+              )}
+
+              {/* 3. LAYAR EKSPLORASI BANGUN DATAR */}
+              {layar === 'eksplorasi' && (
+                <div className="flex-1 max-w-4xl mx-auto w-full p-4 flex flex-col">
+                  <div className="flex items-center justify-between mb-4">
+                    <button 
+                      onClick={() => navigasiKe('peta')}
+                      className="flex items-center gap-1 text-slate-500 hover:text-slate-700 bg-white px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-100"
+                    >
+                      <ArrowLeftIcon className="w-3.5 h-3.5" /> Peta Misi
+                    </button>
+                    <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Markas Belajar</span>
+                  </div>
+
+                  <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+                    {SHAPES_DATA.map((shape) => (
+                      <button
+                        key={shape.id}
+                        onClick={() => {
+                          playClickSound();
+                          setBangunTerpilih(shape);
+                          setBagianDisorot(null);
+                        }}
+                        className={`px-4 py-2 rounded-2xl font-black text-xs whitespace-nowrap transition-all flex items-center gap-1.5 border-2 ${
+                          bangunTerpilih.id === shape.id 
+                            ? 'bg-yellow-300 text-slate-800 border-yellow-400 shadow-sm' 
+                            : 'bg-white text-slate-500 border-slate-100 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span>{shape.id === 'persegi' ? '⏹️' : shape.id === 'segitiga' ? '🔺' : shape.id === 'persegi-panjang' ? '長' : '🟡'}</span>
+                        {shape.nama}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid md:grid-cols-12 gap-5 flex-1 items-start">
+                    <div className="md:col-span-5 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${bangunTerpilih.badgeColor} uppercase tracking-wider mb-3`}>
+                        Interaktif - Sentuh Bangunnya!
+                      </span>
+                      
+                      {renderVisualBangun(bangunTerpilih)}
+
+                      <div className="grid grid-cols-3 gap-2 w-full mt-5">
+                        <button
+                          onClick={() => {
+                            playClickSound();
+                            setBagianDisorot('sisi');
+                          }}
+                          className={`py-2 px-1 rounded-xl text-[10px] font-black uppercase transition ${
+                            bagianDisorot === 'sisi' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          📏 Sisi ({bangunTerpilih.sides.length})
+                        </button>
+                        <button
+                          onClick={() => {
+                            playClickSound();
+                            setBagianDisorot('sudut');
+                          }}
+                          className={`py-2 px-1 rounded-xl text-[10px] font-black uppercase transition ${
+                            bagianDisorot === 'sudut' ? 'bg-red-500 text-white' : 'bg-red-50 text-red-600 hover:bg-red-100'
+                          }`}
+                          disabled={bangunTerpilih.id === 'lingkaran'}
+                          style={{ opacity: bangunTerpilih.id === 'lingkaran' ? 0.4 : 1 }}
+                        >
+                          📐 Sudut ({bangunTerpilih.angles.length})
+                        </button>
+                        <button
+                          onClick={() => {
+                            playClickSound();
+                            setBagianDisorot('titik-sudut');
+                          }}
+                          className={`py-2 px-1 rounded-xl text-[10px] font-black uppercase transition ${
+                            bagianDisorot === 'titik-sudut' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'
+                          }`}
+                          disabled={bangunTerpilih.id === 'lingkaran'}
+                          style={{ opacity: bangunTerpilih.id === 'lingkaran' ? 0.4 : 1 }}
+                        >
+                          🔴 Titik ({bangunTerpilih.points.length})
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-7 flex flex-col gap-4 text-left">
+                      <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                        <h2 className="text-xl font-black text-slate-800 mb-1 flex items-center gap-2">
+                          {bangunTerpilih.nama}
+                        </h2>
+                        <p className="text-xs md:text-sm text-slate-500 leading-relaxed">
+                          {bangunTerpilih.deskripsi}
+                        </p>
+
+                        <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-50 text-center">
+                          <div className="bg-blue-50/50 p-2 rounded-xl">
+                            <span className="block text-lg">📏</span>
+                            <strong className="text-[9px] uppercase text-slate-400">Sisi</strong>
+                            <p className="font-extrabold text-blue-600 text-sm">{bangunTerpilih.sides.length}</p>
+                          </div>
+                          <div className="bg-emerald-50/50 p-2 rounded-xl">
+                            <span className="block text-lg">📐</span>
+                            <strong className="text-[9px] uppercase text-slate-400">Sudut</strong>
+                            <p className="font-extrabold text-emerald-600 text-sm">{bangunTerpilih.angles.length}</p>
+                          </div>
+                          <div className="bg-rose-50/50 p-2 rounded-xl">
+                            <span className="block text-lg">🔴</span>
+                            <strong className="text-[9px] uppercase text-slate-400">Titik Sudut</strong>
+                            <p className="font-extrabold text-rose-600 text-sm">{bangunTerpilih.points.length}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex-1">
+                        <div className="flex border-b border-slate-100 pb-2.5 mb-3">
+                          <button
+                            onClick={() => setTabInfo('bagian')}
+                            className={`pb-1.5 pr-4 font-bold text-xs transition-all ${
+                              tabInfo === 'bagian' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-slate-400'
+                            }`}
+                          >
+                            🔎 Bagian-Bagian
+                          </button>
+                          <button
+                            onClick={() => setTabInfo('benda-nyata')}
+                            className={`pb-1.5 px-4 font-bold text-xs transition-all ${
+                              tabInfo === 'benda-nyata' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-slate-400'
+                            }`}
+                          >
+                            🍱 Benda di Madrasah
+                          </button>
+                        </div>
+
+                        {tabInfo === 'bagian' ? (
+                          <div className="space-y-3">
+                            <div className="flex gap-2 text-xs">
+                              <span className="w-5 h-5 bg-blue-100 text-blue-600 font-bold rounded-full flex items-center justify-center flex-shrink-0">1</span>
+                              <p className="text-slate-600"><strong className="text-slate-800">Sisi:</strong> Batas garis tepi luar yang melingkari bangun datar.</p>
+                            </div>
+                            <div className="flex gap-2 text-xs">
+                              <span className="w-5 h-5 bg-emerald-100 text-emerald-600 font-bold rounded-full flex items-center justify-center flex-shrink-0">2</span>
+                              <p className="text-slate-600"><strong className="text-slate-800">Sudut:</strong> Daerah pojok dalam yang dibatasi oleh dua sisi.</p>
+                            </div>
+                            <div className="flex gap-2 text-xs">
+                              <span className="w-5 h-5 bg-rose-100 text-rose-600 font-bold rounded-full flex items-center justify-center flex-shrink-0">3</span>
+                              <p className="text-slate-600"><strong className="text-slate-800">Titik Sudut:</strong> Ujung paling lancip di bagian pojokan luar.</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid gap-2">
+                            {bangunTerpilih.bendaNyata.map((benda, idx) => (
+                              <div key={idx} className="bg-slate-50 p-2.5 rounded-xl flex items-center gap-3 border border-slate-100">
+                                <span className="text-2xl p-1 bg-white rounded-lg shadow-sm">{benda.icon}</span>
+                                <div>
+                                  <h4 className="font-extrabold text-xs text-slate-800">{benda.nama}</h4>
+                                  <p className="text-[10px] text-slate-400">{benda.deskripsi}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex justify-between items-center bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                    <p className="text-[10px] text-slate-400">Belajar: <strong className="text-slate-600">{bangunTerpilih.nama}</strong></p>
+                    <button
+                      onClick={() => {
+                        resetKuis();
+                        navigasiKe('kuis');
+                      }}
+                      className="bg-emerald-400 hover:bg-emerald-500 text-white font-extrabold text-xs py-2 px-4 rounded-xl shadow-sm flex items-center gap-1.5"
+                    >
+                      Uji Kemampuan di Kuis <ArrowRightIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. LAYAR KUIS PINTAR */}
+              {layar === 'kuis' && (
+                <div className="flex-1 max-w-2xl mx-auto w-full p-4 flex flex-col justify-between">
+                  <div className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between mb-4">
+                    <button 
+                      onClick={() => navigasiKe('peta')}
+                      className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1"
+                    >
+                      <ArrowLeftIcon className="w-3.5 h-3.5" /> Keluar
+                    </button>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-black text-slate-400 uppercase">Soal {indeksKuis + 1}/{QUIZ_QUESTIONS.length}</span>
+                      <div className="w-16 bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div 
+                          className="bg-emerald-400 h-full transition-all"
+                          style={{ width: `${((indeksKuis + 1) / QUIZ_QUESTIONS.length) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 bg-yellow-100 px-2 py-0.5 rounded-full text-yellow-800 font-extrabold text-xs">
+                      <StarIcon className="w-3.5 h-3.5 fill-yellow-500 stroke-yellow-600" />
+                      <span>{bintangKuis}</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex-1 flex flex-col justify-center text-left">
+                    <div className="flex items-start gap-3 mb-4 bg-blue-50/70 p-3.5 rounded-2xl border border-blue-100 text-xs">
+                      <span className="text-2xl flex-shrink-0">🕵️‍♂️</span>
+                      <div>
+                        <h4 className="font-extrabold text-slate-700">Misteri Ke-{indeksKuis + 1}</h4>
+                        <p className="text-slate-600 mt-0.5 leading-relaxed">{QUIZ_QUESTIONS[indeksKuis].pertanyaan}</p>
+                      </div>
+                    </div>
+
+                    {(QUIZ_QUESTIONS[indeksKuis].tipe === 'ketuk-titik-sudut' || QUIZ_QUESTIONS[indeksKuis].tipe === 'ketuk-sisi') && (
+                      <div className="flex flex-col items-center justify-center my-3">
+                        {renderVisualBangun(
+                          SHAPES_DATA.find(s => s.id === QUIZ_QUESTIONS[indeksKuis].bangunId),
+                          true,
+                          true,
+                          QUIZ_QUESTIONS[indeksKuis].tipe
+                        )}
+
+                        <div className="mt-3 text-center">
+                          <p className="text-[10px] text-slate-400">{QUIZ_QUESTIONS[indeksKuis].instruksiKhusus}</p>
+                          
+                          <div className="mt-2 flex items-center justify-center gap-1 bg-slate-50 px-3 py-1 rounded-xl border border-slate-100">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Ditemukan:</span>
+                            <strong className="text-xs text-blue-600 font-black">
+                              {itemTerpilihKuis.length} / {QUIZ_QUESTIONS[indeksKuis].targetCount}
+                            </strong>
+                          </div>
+
+                          {QUIZ_QUESTIONS[indeksKuis].bangunId === 'lingkaran' && QUIZ_QUESTIONS[indeksKuis].tipe === 'ketuk-titik-sudut' && (
+                            <button
+                              onClick={() => {
+                                playClickSound();
+                                setItemTerpilihKuis([]);
+                                verifikasiJawabanKuis();
+                              }}
+                              disabled={kuisDiverifikasi}
+                              className="mt-3 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl shadow transition"
+                            >
+                              Tidak Ada Titik Sudut ⭕
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {QUIZ_QUESTIONS[indeksKuis].tipe === 'misteri-detektif' && (
+                      <div className="space-y-2.5 my-3">
+                        {QUIZ_QUESTIONS[indeksKuis].pilihan.map((opsi) => {
+                          const isSelected = jawabanTerpilih === opsi.id;
+                          let btnStyle = "bg-white hover:bg-slate-50 border-slate-200 text-slate-700";
+                          
+                          if (isSelected) btnStyle = "bg-yellow-100 border-yellow-400 text-yellow-900";
+                          if (kuisDiverifikasi) {
+                            if (opsi.benar) btnStyle = "bg-emerald-100 border-emerald-400 text-emerald-900";
+                            else if (isSelected && !opsi.benar) btnStyle = "bg-rose-100 border-rose-400 text-rose-900";
+                          }
+
+                          return (
+                            <button
+                              key={opsi.id}
+                              onClick={() => {
+                                if (kuisDiverifikasi) return;
+                                playClickSound();
+                                setJawabanTerpilih(opsi.id);
+                              }}
+                              disabled={kuisDiverifikasi}
+                              className={`w-full p-3 rounded-xl border-2 text-left font-bold text-xs md:text-sm transition flex items-center justify-between ${btnStyle}`}
+                            >
+                              <span>{opsi.text}</span>
+                              {kuisDiverifikasi && opsi.benar && <CheckCircleIcon className="w-4 h-4 text-emerald-600" />}
+                              {kuisDiverifikasi && isSelected && !opsi.benar && <XCircleIcon className="w-4 h-4 text-rose-600" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {kuisDiverifikasi && (
+                      <div className={`mt-4 p-3 rounded-xl border-2 text-xs ${
+                        kuisBenar ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'
+                      }`}>
+                        <div className="font-extrabold flex items-center gap-1.5">
+                          {kuisBenar ? '🎉 Masya Allah, Benar!' : '💡 Coba Periksa Lagi, Detektif!'}
+                        </div>
+                        <p className="opacity-90 mt-1">
+                          {QUIZ_QUESTIONS[indeksKuis].tipe === 'misteri-detektif'
+                            ? (kuisBenar ? QUIZ_QUESTIONS[indeksKuis].umpanBalikBenar : QUIZ_QUESTIONS[indeksKuis].umpanBalikSalah)
+                            : (kuisBenar 
+                                ? `Sempurna! Kamu berhasil menandai semua bagian dengan sangat presisi.` 
+                                : `Jumlah ketukanmu belum tepat. Harus ada ${QUIZ_QUESTIONS[indeksKuis].targetCount} ketukan.`
+                              )
+                          }
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-end gap-2.5">
+                    <button
+                      onClick={() => {
+                        playClickSound();
+                        setBantuanTerbuka(true);
+                      }}
+                      className="bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-800 p-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1"
+                    >
+                      <HelpCircleIcon className="w-4 h-4" /> Bantuan
+                    </button>
+
+                    {!kuisDiverifikasi ? (
+                      <button
+                        onClick={verifikasiJawabanKuis}
+                        disabled={
+                          (QUIZ_QUESTIONS[indeksKuis].tipe === 'ketuk-titik-sudut' && QUIZ_QUESTIONS[indeksKuis].bangunId !== 'lingkaran' && itemTerpilihKuis.length === 0) ||
+                          (QUIZ_QUESTIONS[indeksKuis].tipe === 'ketuk-sisi' && itemTerpilihKuis.length === 0) ||
+                          (QUIZ_QUESTIONS[indeksKuis].tipe === 'misteri-detektif' && !jawabanTerpilih)
+                        }
+                        className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-extrabold text-xs md:text-sm py-2.5 px-5 rounded-xl shadow-sm transition"
+                      >
+                        Periksa Jawaban
+                      </button>
+                    ) : (
+                      <button
+                        onClick={lanjutKuis}
+                        className="bg-emerald-400 hover:bg-emerald-500 text-white font-extrabold text-xs md:text-sm py-2.5 px-5 rounded-xl shadow-sm transition flex items-center gap-1.5"
+                      >
+                        {indeksKuis + 1 === QUIZ_QUESTIONS.length ? 'Lihat Lencana' : 'Kasus Selanjutnya'} <ArrowRightIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {bantuanTerbuka && (
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-3xl p-5 max-w-sm w-full border-4 border-yellow-300 text-left relative animate-in zoom-in-95">
+                        <h4 className="font-black text-slate-800 text-sm mb-2 flex items-center gap-1.5">
+                          <SmileIcon className="text-yellow-500" /> Petunjuk Detektif Dino
+                        </h4>
+                        <div className="text-xs text-slate-600 space-y-2 leading-relaxed">
+                          {QUIZ_QUESTIONS[indeksKuis].tipe === 'ketuk-titik-sudut' && (
+                            <p>Temukan bagian pojokan paling luar yang berbentuk tajam. Setiap bentuk (kecuali lingkaran) memiliki pojok luar yang runcing.</p>
+                          )}
+                          {QUIZ_QUESTIONS[indeksKuis].tipe === 'ketuk-sisi' && (
+                            <p>Sisi adalah tepi berupa garis pembatas luar. Ketuklah setiap garis yang membingkai bangun datar tersebut.</p>
+                          )}
+                          {QUIZ_QUESTIONS[indeksKuis].tipe === 'misteri-detektif' && (
+                            <p>Gunakan petunjuk jumlah pojok tajam dan kesamaan panjang sisi untuk menemukan nama bangun datar yang dimaksud.</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => {
+                            playClickSound();
+                            setBantuanTerbuka(false);
+                          }}
+                          className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-white font-extrabold py-2 rounded-xl text-xs transition"
+                        >
+                          Saya Siap!
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 5. LAYAR SERTIFIKAT */}
+              {layar === 'sertifikat' && (
+                <div className="flex-1 max-w-lg mx-auto w-full p-4 flex flex-col items-center justify-center text-center">
+                  <div className="bg-white border-4 border-yellow-300 rounded-3xl p-5 w-full shadow-lg relative overflow-hidden mb-5">
+                    <div className="absolute top-0 inset-x-0 h-2.5 bg-gradient-to-r from-blue-400 via-yellow-400 to-emerald-400" />
+
+                    <div className="my-4 animate-bounce">
+                      <span className="text-5xl">🏆</span>
+                    </div>
+
+                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase block mb-1">
+                      Piagam Penghargaan Detektif
+                    </span>
+                    <h2 className="text-xl font-black text-slate-800">
+                      Ahli Bangun Datar Cilik
+                    </h2>
+                    
+                    <div className="flex items-center justify-center gap-1.5 mt-1 text-emerald-600 font-extrabold text-xs">
+                      <SchoolIcon className="w-4 h-4" />
+                      <span>{namaSekolah || 'Madrasah Hebat'}</span>
+                    </div>
+
+                    <div className="border-b-2 border-dashed border-slate-100 py-3.5 my-4">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Diberikan Kepada:</p>
+                      <h3 className="text-2xl font-black text-blue-600 uppercase mt-1">
+                        {detektifNama || 'Detektif Hebat'}
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4 text-xs">
+                      <div>
+                        <strong className="block text-[9px] uppercase text-slate-400">Kasus Selesai</strong>
+                        <p className="font-black text-slate-700">{QUIZ_QUESTIONS.length} Kasus</p>
+                      </div>
+                      <div>
+                        <strong className="block text-[9px] uppercase text-slate-400">Total Bintang</strong>
+                        <p className="font-black text-yellow-600 flex items-center justify-center gap-1">
+                          <StarIcon className="w-3.5 h-3.5 fill-yellow-500 stroke-yellow-600" /> {bintangKuis} / {QUIZ_QUESTIONS.length}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-400 italic leading-relaxed px-4">
+                      "Barakallah fii ilmik! Kamu telah berhasil menelusuri Sisi, Sudut, dan Titik Sudut secara detail dan luar biasa!"
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 w-full">
+                    <button
+                      onClick={simpanSkorDetektif}
+                      disabled={skorTersimpan}
+                      className={`w-full py-3.5 px-6 rounded-2xl font-black text-xs md:text-sm shadow-md transition flex items-center justify-center gap-2 ${
+                        skorTersimpan 
+                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' 
+                          : 'bg-yellow-300 hover:bg-yellow-400 text-yellow-900 border-b-4 border-yellow-500 active:border-b-0'
+                      }`}
+                    >
+                      <SaveIcon className="w-4 h-4" /> 
+                      {skorTersimpan ? 'Skor Berhasil Disimpan!' : 'Simpan Skor ke Papan Prestasi 💾'}
+                    </button>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => {
+                          resetKuis();
+                          navigasiKe('peta');
+                        }}
+                        className="bg-white hover:bg-slate-50 border-2 border-slate-200 text-slate-600 font-extrabold py-3.5 px-4 rounded-2xl text-xs transition flex items-center justify-center gap-1"
+                      >
+                        <RefreshCwIcon className="w-3.5 h-3.5" /> Ulangi Kuis
+                      </button>
+                      <button
+                        onClick={() => navigasiKe('papan-prestasi')}
+                        className="bg-slate-800 hover:bg-slate-700 text-white font-extrabold py-3.5 px-4 rounded-2xl text-xs transition flex items-center justify-center gap-1"
+                      >
+                        <TrophyIcon className="w-3.5 h-3.5 text-yellow-400" /> Papan Skor
+                      </button>
+                    </div>
+                  </div>
+
+                  {notifikasiBerhasil && (
+                    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-3xl p-5 max-w-sm w-full border-4 border-emerald-400 text-center relative animate-in zoom-in-95">
+                        <span className="text-4xl block mb-2">🎉</span>
+                        <h4 className="font-extrabold text-slate-800 text-sm mb-1">Berhasil Disimpan!</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                          Skor atas nama <strong className="text-blue-600">{detektifNama}</strong> dari <strong className="text-emerald-600">{namaSekolah}</strong> sudah masuk ke Papan Prestasi Detektif!
+                        </p>
+                        <button
+                          onClick={() => {
+                            playClickSound();
+                            setNotifikasiBerhasil(false);
+                          }}
+                          className="w-full bg-emerald-400 hover:bg-emerald-500 text-white font-extrabold py-2 rounded-xl text-xs transition"
+                        >
+                          Alhamdulillah, Mantap! 👍
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 6. LAYAR PAPAN PRESTASI */}
+              {layar === 'papan-prestasi' && (
+                <div className="flex-1 max-w-md mx-auto w-full p-4 flex flex-col justify-between">
+                  <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex-1 flex flex-col">
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                      <h3 className="font-black text-slate-800 text-base flex items-center gap-1.5">
+                        <TrophyIcon className="w-5 h-5 text-yellow-500" /> Papan Prestasi Detektif
+                      </h3>
+                      <button
+                        onClick={() => navigasiKe('beranda')}
+                        className="text-slate-400 hover:text-slate-600 font-bold text-xs flex items-center gap-0.5"
+                      >
+                        <ArrowLeftIcon className="w-3.5 h-3.5" /> Beranda
+                      </button>
+                    </div>
+
+                    <div className="space-y-2.5 overflow-y-auto max-h-[360px] pr-1 flex-1 text-left">
+                      {daftarSkor.map((skor, index) => (
+                        <div 
+                          key={index} 
+                          className={`p-3 rounded-2xl border flex items-center justify-between transition ${
+                            skor.nama === detektifNama && skor.sekolah === namaSekolah
+                              ? 'bg-yellow-50 border-yellow-300' 
+                              : 'bg-slate-50/50 border-slate-100'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className={`w-6 h-6 rounded-lg font-black text-xs flex items-center justify-center ${
+                              index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                              index === 1 ? 'bg-slate-200 text-slate-700' :
+                              index === 2 ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              {index + 1}
+                            </span>
+                            
+                            <div>
+                              <h4 className="font-extrabold text-xs text-slate-800 flex items-center gap-1">
+                                {skor.nama}
+                                {skor.nama === detektifNama && skor.sekolah === namaSekolah && (
+                                  <span className="text-[8px] bg-yellow-200 text-yellow-800 px-1 py-0.5 rounded font-black uppercase">Kamu</span>
+                                )}
+                              </h4>
+                              <p className="text-[9px] text-slate-400 flex items-center gap-0.5 mt-0.5">
+                                <SchoolIcon className="w-2.5 h-2.5 text-emerald-500" /> {skor.sekolah}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="inline-flex items-center gap-0.5 bg-yellow-100 text-yellow-800 font-black text-xs px-2 py-0.5 rounded-full">
+                              ⭐ {skor.bintang}
+                            </span>
+                            <p className="text-[8px] text-slate-300 mt-0.5 flex items-center gap-0.5 justify-end">
+                              <CalendarIcon className="w-2 h-2" /> {skor.tanggal}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => navigasiKe('beranda')}
+                    className="mt-4 w-full bg-emerald-400 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-2xl text-xs shadow transition"
+                  >
+                    Kembali Main & Pecahkan Kasus 🚀
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // Render aplikasi ke DOM root
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
